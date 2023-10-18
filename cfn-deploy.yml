@@ -10,6 +10,7 @@ Parameters:
 Resources:
   LayerVersion:
     Type: AWS::Lambda::LayerVersion
+    UpdateReplacePolicy: Retain
     Properties: 
       CompatibleArchitectures:
         - x86_64
