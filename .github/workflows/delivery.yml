@@ -1,0 +1,40 @@
+name: delivery
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials for us-east-2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.CD_AWS_ACCOUNT_ID }}:role/github-oidc-humangraphics-role
+          aws-region: us-east-2
+      - name: Build our layer
+        run: make
+      - name: Prepare CloudFormation stack
+        run: aws cloudformation package --template-file cfn-deploy.yml --s3-bucket "$S3_BUCKET" --s3-prefix artifacts/backend-lambda-layer >cfn-deploy.packaged.yml
+        env:
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+      - name: Deploy CloudFormation stack
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.CD_AWS_ACCOUNT_ID }}
+        with:
+          name: humangraphics-backend-lambda-layer
+          template: cfn-deploy.packaged.yml
+          parameter-overrides: >-
+            BuildId=${{ github.sha }}
+          no-fail-on-empty-changeset: 1
+          role-arn: "arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/humangraphics-backend-cloudformation-deploy-role"
+          capabilities: CAPABILITY_IAM, CAPABILITY_NAMED_IAM, CAPABILITY_AUTO_EXPAND

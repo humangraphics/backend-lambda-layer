@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  BuildId:
+    Type: String
+    Description: The build identifier
+    AllowedPattern: "^[0-9A-Za-z]+$"
+    
+Resources:
+  LayerVersion:
+    Type: AWS::Lambda::LayerVersion
+    Properties: 
+      CompatibleArchitectures:
+        - x86_64
+      CompatibleRuntimes: 
+        - java17
+      Content: layer.zip
+      Description: !Ref BuildId
+      LayerName: humangraphics-backend
+
+Outputs:
+  LayerVersion:
+    Value: !Ref LayerVersion
+    Description: The ARN of the HumanGraphics Lambda Layer version
+    Export:
+      Name: "humangraphics-backend-lambda-layer"
