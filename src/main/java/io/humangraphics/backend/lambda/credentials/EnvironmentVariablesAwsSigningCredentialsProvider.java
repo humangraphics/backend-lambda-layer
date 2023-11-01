@@ -29,7 +29,7 @@ public class EnvironmentVariablesAwsSigningCredentialsProvider
     final String accessKeyId = System.getenv(AWS_ACCESS_KEY_ID);
     final String secretAccessKey = System.getenv(AWS_SECRET_ACCESS_KEY);
     final String sessionToken = System.getenv(AWS_SESSION_TOKEN);
-    return accessKeyId != null && secretAccessKey != null && sessionToken != null
+    return accessKeyId != null && secretAccessKey != null
         ? new AwsSigningCredentials(accessKeyId, secretAccessKey, sessionToken)
         : null;
   }

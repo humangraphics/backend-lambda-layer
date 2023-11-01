@@ -37,12 +37,6 @@ import io.humangraphics.backend.lambda.util.LambdaLayer;
 public class TmpDump {
   private static boolean DEBUG = LambdaLayer.DEBUG;
 
-  public static final String AWS_ACCESS_KEY_ID_ENV_NAME = "AWS_ACCESS_KEY_ID";
-
-  public static final String AWS_SECRET_ACCESS_KEY_ENV_NAME = "AWS_SECRET_ACCESS_KEY";
-
-  public static final String AWS_SESSION_TOKEN_ENV_NAME = "AWS_SESSION_TOKEN";
-
   public static final String AWS_REGION_ENV_NAME = "AWS_REGION";
 
   private static String getenv(String name) {

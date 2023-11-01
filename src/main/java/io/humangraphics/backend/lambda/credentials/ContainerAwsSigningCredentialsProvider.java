@@ -41,7 +41,7 @@ public class ContainerAwsSigningCredentialsProvider implements AwsSigningCredent
   private AwsSigningCredentials fetchCredentials() {
     String containerCredentialsFullUri = System.getenv(AWS_CONTAINER_CREDENTIALS_FULL_URI);
     String containerAuthorizationToken = System.getenv(AWS_CONTAINER_AUTHORIZATION_TOKEN);
-    if (containerCredentialsFullUri == null && containerAuthorizationToken == null)
+    if (containerCredentialsFullUri == null || containerAuthorizationToken == null)
       return null;
 
     JSONObject response;
