@@ -52,7 +52,10 @@ public class ContainerAwsSigningCredentialsProvider implements AwsSigningCredent
       try {
         cn.setRequestProperty("authorization", AWS_CONTAINER_AUTHORIZATION_TOKEN);
         if (cn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-          response = new JSONObject(cn.getInputStream());
+          String responseBody =
+              new String(ByteStreams.toByteArray(cn.getInputStream()), StandardCharsets.UTF_8);
+          System.out.println("Received response: " + responseBody);
+          response = new JSONObject(responseBody);
         } else {
           String errorBody =
               new String(ByteStreams.toByteArray(cn.getErrorStream()), StandardCharsets.UTF_8);
