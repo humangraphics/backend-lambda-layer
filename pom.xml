@@ -65,6 +65,7 @@
             <artifactId>httpmodel-aws</artifactId>
             <version>1.0.1</version>
         </dependency>
+        <!-- For unpacking tmpdumps -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>

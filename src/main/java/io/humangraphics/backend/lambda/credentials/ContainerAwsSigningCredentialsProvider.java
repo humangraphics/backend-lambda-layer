@@ -1,4 +1,4 @@
-package io.humangraphics.backend.lambda;
+package io.humangraphics.backend.lambda.credentials;
 
 import static java.lang.String.format;
 import java.io.IOException;
@@ -6,7 +6,6 @@ import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import org.json.JSONObject;
 import com.sigpwned.httpmodel.aws.AwsSigningCredentials;
 import com.sigpwned.httpmodel.aws.AwsSigningCredentialsProvider;
@@ -28,14 +27,10 @@ public class ContainerAwsSigningCredentialsProvider implements AwsSigningCredent
   }
 
   private static final String AWS_CONTAINER_CREDENTIALS_FULL_URI =
-      Optional.ofNullable(System.getenv("AWS_CONTAINER_CREDENTIALS_FULL_URI"))
-          .orElseThrow(() -> new AssertionError(
-              "No value for environment variable AWS_CONTAINER_CREDENTIALS_FULL_URI"));
+      "AWS_CONTAINER_CREDENTIALS_FULL_URI";
 
   private static final String AWS_CONTAINER_AUTHORIZATION_TOKEN =
-      Optional.ofNullable(System.getenv("AWS_CONTAINER_AUTHORIZATION_TOKEN"))
-          .orElseThrow(() -> new AssertionError(
-              "No value for environment variable AWS_CONTAINER_AUTHORIZATION_TOKEN"));
+      "AWS_CONTAINER_AUTHORIZATION_TOKEN";
 
   /**
    * https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/auth/BaseCredentialsFetcher.java#L55C1-L62C1
@@ -44,13 +39,18 @@ public class ContainerAwsSigningCredentialsProvider implements AwsSigningCredent
    * https://github.com/aws/aws-lambda-runtime-interface-emulator/blob/bf7e2486034742b84a1a25d28478e147b5e65f06/lambda/rapi/handler/credentials.go#L20
    */
   private AwsSigningCredentials fetchCredentials() {
+    String containerCredentialsFullUri = System.getenv(AWS_CONTAINER_CREDENTIALS_FULL_URI);
+    String containerAuthorizationToken = System.getenv(AWS_CONTAINER_AUTHORIZATION_TOKEN);
+    if (containerCredentialsFullUri == null && containerAuthorizationToken == null)
+      return null;
+
     JSONObject response;
 
     try {
       HttpURLConnection cn =
-          (HttpURLConnection) new URL(AWS_CONTAINER_CREDENTIALS_FULL_URI).openConnection();
+          (HttpURLConnection) new URL(containerCredentialsFullUri).openConnection();
       try {
-        cn.setRequestProperty("authorization", AWS_CONTAINER_AUTHORIZATION_TOKEN);
+        cn.setRequestProperty("authorization", containerAuthorizationToken);
         if (cn.getResponseCode() == HttpURLConnection.HTTP_OK) {
           String responseBody =
               new String(ByteStreams.toByteArray(cn.getInputStream()), StandardCharsets.UTF_8);

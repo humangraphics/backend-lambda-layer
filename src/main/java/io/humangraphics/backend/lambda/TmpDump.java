@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,11 +29,14 @@ import com.sigpwned.httpmodel.core.model.ModelHttpRequest;
 import com.sigpwned.httpmodel.core.model.ModelHttpResponse;
 import com.sigpwned.httpmodel.core.model.ModelHttpUrl;
 import io.humangraphics.backend.lambda.util.ByteStreams;
+import io.humangraphics.backend.lambda.util.LambdaLayer;
 
 /**
  * Download a ZIP file from S3 and unzip it to the current directory
  */
 public class TmpDump {
+  private static boolean DEBUG = LambdaLayer.DEBUG;
+
   public static final String AWS_ACCESS_KEY_ID_ENV_NAME = "AWS_ACCESS_KEY_ID";
 
   public static final String AWS_SECRET_ACCESS_KEY_ENV_NAME = "AWS_SECRET_ACCESS_KEY";
@@ -48,7 +52,7 @@ public class TmpDump {
 
   public static void main(String[] args) throws Exception {
     if (args.length != 1 || args[0].equals("-help")) {
-      System.err.println("Syntax: java io.humangraphics.backend.lambda.LibDump <s3uri>");
+      System.err.println("Syntax: java io.humangraphics.backend.lambda.TmpDump <s3uri>");
       System.exit(1);
     }
 
@@ -77,11 +81,13 @@ public class TmpDump {
 
     final String region = getenv(AWS_REGION_ENV_NAME);
 
-    System.out.println("Found bucketName " + bucketName);
-    System.out.println("Found path " + path);
-    System.out.println("Found region " + region);
+    if (DEBUG) {
+      System.err.println("Found bucketName " + bucketName);
+      System.err.println("Found path " + path);
+      System.err.println("Found region " + region);
+    }
 
-    return s3get(new ContainerAwsSigningCredentialsProvider(), uri, bucketName, path, region);
+    return s3get(new AwsSigningCredentialsProviderChain(), uri, bucketName, path, region);
   }
 
   /* default */ static Optional<ModelHttpEntity> s3get(
@@ -93,16 +99,22 @@ public class TmpDump {
     final String url =
         format("https://%s.%s.amazonaws.com/%s%s", S3_SERVICE_NAME, region, bucketName, path);
 
-    System.out.println("Computed url " + url);
+    if (DEBUG) {
+      System.err.println("Computed url " + url);
+    }
 
     try (ModelHttpClient client = new AwsSigningModelHttpClient(
         new SigV4AwsSigner(credentialsProvider), new UrlConnectionModelHttpClient())) {
       ModelHttpResponse response = client.send(ModelHttpRequest.builder().version("1.1")
           .method("GET").headers(ModelHttpHeaders.of()).url(ModelHttpUrl.fromString(url)).build());
-      System.out.println("Got status code " + response.getStatusCode());
-      if (response.getStatusCode() != 200) {
-        System.out
-            .println(response.getEntity().map(e -> e.toString(StandardCharsets.UTF_8)).orElse(""));
+      if (DEBUG) {
+        System.err.println("Got status code " + response.getStatusCode());
+      }
+      if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+        if (DEBUG) {
+          System.err.println(
+              response.getEntity().map(e -> e.toString(StandardCharsets.UTF_8)).orElse(""));
+        }
         throw new IOException(format("S3 Get Failure %s (%d)", url, response.getStatusCode()));
       }
       return response.getEntity();
@@ -124,7 +136,9 @@ public class TmpDump {
           try (InputStream input = zip.getInputStream(entry)) {
             target = Paths.get(new String(ByteStreams.toByteArray(input), StandardCharsets.UTF_8));
           }
-          System.out.println("Writing zip symlink " + file + " -> " + target);
+          if (DEBUG) {
+            System.err.println("Writing zip symlink " + file + " -> " + target);
+          }
           Files.createSymbolicLink(file, target);
         } else {
           try (OutputStream output = Files.newOutputStream(file, StandardOpenOption.CREATE,
@@ -132,7 +146,9 @@ public class TmpDump {
             try (InputStream input = zip.getInputStream(entry)) {
               ByteStreams.copyTo(input, output);
             }
-            System.out.println("Writing zip file " + file);
+            if (DEBUG) {
+              System.err.println("Writing zip file " + file);
+            }
           }
         }
       }
