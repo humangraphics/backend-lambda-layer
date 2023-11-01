@@ -53,6 +53,12 @@
         </plugins>
     </build>
     <dependencies>
+        <!-- For getting AWS credentials -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
         <!-- For signing S3 requests -->
         <dependency>
             <groupId>com.sigpwned</groupId>

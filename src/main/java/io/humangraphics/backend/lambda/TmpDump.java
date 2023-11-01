@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
-import com.sigpwned.httpmodel.aws.AwsSigningCredentials;
+import com.sigpwned.httpmodel.aws.AwsSigningCredentialsProvider;
 import com.sigpwned.httpmodel.aws.AwsSigningModelHttpClient;
 import com.sigpwned.httpmodel.aws.signer.SigV4AwsSigner;
 import com.sigpwned.httpmodel.core.ModelHttpClient;
@@ -75,24 +75,18 @@ public class TmpDump {
     final String bucketName = s3UriMatcher.group(1).toLowerCase();
     final String path = s3UriMatcher.group(2);
 
-    final String accessKeyId = getenv(AWS_ACCESS_KEY_ID_ENV_NAME);
-    final String secretAccessKey = getenv(AWS_SECRET_ACCESS_KEY_ENV_NAME);
-    final String sessionToken = getenv(AWS_SESSION_TOKEN_ENV_NAME);
     final String region = getenv(AWS_REGION_ENV_NAME);
 
     System.out.println("Found bucketName " + bucketName);
     System.out.println("Found path " + path);
-    System.out.println("Found accessKeyId " + accessKeyId);
-    System.out.println("Found secretAccessKey " + secretAccessKey);
-    System.out.println("Found sessionToken " + sessionToken);
     System.out.println("Found region " + region);
 
-    return s3get(uri, bucketName, path, accessKeyId, secretAccessKey, sessionToken, region);
+    return s3get(new ContainerAwsSigningCredentialsProvider(), uri, bucketName, path, region);
   }
 
-  /* default */ static Optional<ModelHttpEntity> s3get(String uri, String bucketName, String path,
-      String accessKeyId, String secretAccessKey, String sessionToken, String region)
-      throws IOException {
+  /* default */ static Optional<ModelHttpEntity> s3get(
+      AwsSigningCredentialsProvider credentialsProvider, String uri, String bucketName, String path,
+      String region) throws IOException {
     /**
      * https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html
      */
@@ -102,9 +96,7 @@ public class TmpDump {
     System.out.println("Computed url " + url);
 
     try (ModelHttpClient client = new AwsSigningModelHttpClient(
-        new SigV4AwsSigner(
-            () -> AwsSigningCredentials.of(accessKeyId, secretAccessKey, sessionToken)),
-        new UrlConnectionModelHttpClient())) {
+        new SigV4AwsSigner(credentialsProvider), new UrlConnectionModelHttpClient())) {
       ModelHttpResponse response = client.send(ModelHttpRequest.builder().version("1.1")
           .method("GET").headers(ModelHttpHeaders.of()).url(ModelHttpUrl.fromString(url)).build());
       System.out.println("Got status code " + response.getStatusCode());
