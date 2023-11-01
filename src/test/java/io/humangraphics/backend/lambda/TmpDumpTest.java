@@ -1,10 +1,11 @@
 package io.humangraphics.backend.lambda;
 
 import java.io.IOException;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.sigpwned.httpmodel.aws.AwsSigningCredentials;
 
-// @Ignore
+@Ignore
 public class TmpDumpTest {
   @Test
   public void test() throws IOException {
