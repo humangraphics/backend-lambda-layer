@@ -17,7 +17,10 @@
 #   -classpath
 #   /var/runtime/lib/aws-lambda-java-core-1.2.3.jar:/var/runtime/lib/aws-lambda-java-runtime-interface-client-2.4.1-linux-x86_64.jar:/var/runtime/lib/aws-lambda-java-serialization-1.1.2.jar
 #   com.amazonaws.services.lambda.runtime.api.client.AWSLambda
-#   com.sigpwned.lambdainternals.App::handleRequest 
+#   com.sigpwned.lambdainternals.App::handleRequest
+
+# Dump our env
+env 
 
 # Unpack our tmpdump, if we have one
 pushd /tmp

@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -48,28 +47,20 @@ public class TmpDump {
   }
 
   public static void main(String[] args) throws Exception {
-    System.out.println("Starting LibDump");
-
     if (args.length != 1 || args[0].equals("-help")) {
       System.err.println("Syntax: java io.humangraphics.backend.lambda.LibDump <s3uri>");
       System.exit(1);
     }
 
-    System.out.println("Received args " + Arrays.toString(args));
-
     String uri = args[0];
 
-    System.out.println("uri = " + uri);
-
     ModelHttpEntity entity = s3get(uri).orElse(null);
-    if (entity == null) {
-      System.out.println("No entity, exiting...");
-      return;
-    }
 
-    try (SeekableByteChannel channel = new SeekableInMemoryByteChannel(entity.toByteArray());
-        ZipFile zip = new ZipFile(channel)) {
-      unzip(zip);
+    if (entity != null) {
+      try (SeekableByteChannel channel = new SeekableInMemoryByteChannel(entity.toByteArray());
+          ZipFile zip = new ZipFile(channel)) {
+        unzip(zip);
+      }
     }
   }
 
