@@ -12,8 +12,9 @@ Again, tmpdumps are typically used to house (large) native libraries. To create 
 1. Enable debug printin in javacpp using `-Dorg.bytedeco.javacpp.logger.debug=true` and run the application, being sure to exercise all code paths that load libraries.
 2. Inspect the debug logs to find the libraries which are loaded and essential to the application. This command can be useful to extract loaded libraries: `cat debug.log | grep 'Loading' | grep '[.]so' | less | awk '{print $3}' | sed -e 's!^.*[.]jar/!/!;'`. This command can be useful to extract loaded classes: `cat debug.log | grep 'Loading class' | awk '{print $4}' | sort | uniq -c | sort -nr`.
 3. Add the cache javacpp mojo to POM, caching the essential libraries. It may be prudent to add this to a profile.
-4. Add the cached libraries from the x86_64 platform to a ZIP file at "lib/library.so". To save space, use symlinks for library versions, using the `zip -y` flag.
-5. Upload to S3 at `$BUCKET/tmpdump/$LAMBDA_NAME.zip`.
+4. Run the build using `mvn -Dorg.bytedeco.javacpp.cachedir=target/javacpp/lib -Dorg.bytedeco.javacpp.cachedir.nosubdir=true -Djavacpp.platform=linux-x86_64 clean compile install`.
+5. Add the cached libraries from the x86_64 platform to a ZIP file at "lib/library.so". To save space, use symlinks for library versions, using the `zip -y` flag.
+6. Upload to S3 at `$BUCKET/tmpdump/$LAMBDA_NAME.zip`.
 
 Example instructions for refining a tmpdump:
 
@@ -24,3 +25,4 @@ Example instructions for refining a tmpdump:
     zip -d tmpdump.zip 'lib/.lock'
     zip -d tmpdump.zip 'lib/*openblas_nolapack*'
  
+TODO: Figure out how to load AVX2 platform libs.
