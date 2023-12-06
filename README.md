@@ -26,3 +26,11 @@ Example instructions for refining a tmpdump:
     zip -d tmpdump.zip 'lib/*openblas_nolapack*'
  
 TODO: Figure out how to load AVX2 platform libs.
+
+When releasing the artifact, these library files should be removed from the JAR. This is a good starting point for what to remove:
+
+    zip -d target/lambda-analyze-human-face-race.jar 'org/bytedeco/**/*.so*'
+    zip -d target/lambda-analyze-human-face-race.jar 'org/bytedeco/**/*.a'
+    zip -d target/lambda-analyze-human-face-race.jar 'org/bytedeco/**/*.xml'
+    zip -d target/lambda-analyze-human-face-race.jar 'org/bytedeco/**/*.h'
+    zip -d target/lambda-analyze-human-face-race.jar 'org/bytedeco/**/*.hpp'
