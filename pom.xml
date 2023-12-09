@@ -35,6 +35,16 @@
                         </goals>
                         <configuration>
                             <minimizeJar>true</minimizeJar>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.apache.commons.compress</pattern>
+                                    <shadedPattern>io.humangraphics.backend.lambda.thirdparty.org.apache.commons.compress</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.sigpwned.aws.sdk.lite</pattern>
+                                    <shadedPattern>io.humangraphics.backend.lambda.thirdparty.com.sigpwned.aws.sdk.lite</shadedPattern>
+                                </relocation>
+                            </relocations>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
