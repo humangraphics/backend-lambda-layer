@@ -7,6 +7,12 @@ This backend layer makes a few important preparations to the lambda runtime duri
 3. Load so-called "tmpdump" archives from S3. This allows applications to load arbitrary application data into the /tmp folder during initialization, which is used for native libraries in practice. This is important because native libraries for ML are frequently large, but the application can only be up to 256MB unzipped.
 4. Modify the library loading paths to include `/tmp/lib`. Both `java.library.path` and `LD_LIBRARY_PATH` are customized. This is important because native libraries should be loadable from tmpdumps.
 
+## Releasing this artifact
+
+This artifact is automatically deployed on merge to main. Active development should happen on the `v2.4.x` (or similar) branch, and then be merged via PR. Deployment creates a Lambda layer automatically using the CloudFormation `cfn-deploy.yml` template via continuous delivery.
+
+## Creating tmpdumps
+
 Again, tmpdumps are typically used to house (large) native libraries. To create a tmpdump using javacpp libraries, perform the following steps:
 
 1. Enable debug printin in javacpp using `-Dorg.bytedeco.javacpp.logger.debug=true` and run the application, being sure to exercise all code paths that load libraries.
