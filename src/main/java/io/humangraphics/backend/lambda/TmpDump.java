@@ -1,10 +1,8 @@
 package io.humangraphics.backend.lambda;
 
-import static java.lang.String.format;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,16 +16,13 @@ import java.util.regex.Pattern;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
-import com.sigpwned.httpmodel.aws.AwsSigningCredentialsProvider;
-import com.sigpwned.httpmodel.aws.AwsSigningModelHttpClient;
-import com.sigpwned.httpmodel.aws.signer.SigV4AwsSigner;
-import com.sigpwned.httpmodel.core.ModelHttpClient;
-import com.sigpwned.httpmodel.core.client.UrlConnectionModelHttpClient;
-import com.sigpwned.httpmodel.core.model.ModelHttpEntity;
-import com.sigpwned.httpmodel.core.model.ModelHttpHeaders;
-import com.sigpwned.httpmodel.core.model.ModelHttpRequest;
-import com.sigpwned.httpmodel.core.model.ModelHttpResponse;
-import com.sigpwned.httpmodel.core.model.ModelHttpUrl;
+import com.sigpwned.aws.sdk.lite.core.auth.AwsCredentialsProvider;
+import com.sigpwned.aws.sdk.lite.core.auth.credentials.provider.chain.DefaultAwsCredentialsProviderChain;
+import com.sigpwned.aws.sdk.lite.s3.S3Client;
+import com.sigpwned.aws.sdk.lite.s3.exception.AccessDeniedException;
+import com.sigpwned.aws.sdk.lite.s3.exception.NoSuchBucketException;
+import com.sigpwned.aws.sdk.lite.s3.exception.NoSuchKeyException;
+import com.sigpwned.aws.sdk.lite.s3.model.GetObjectRequest;
 import io.humangraphics.backend.lambda.util.ByteStreams;
 import io.humangraphics.backend.lambda.util.LambdaLayer;
 
@@ -52,10 +47,10 @@ public class TmpDump {
 
     String uri = args[0];
 
-    ModelHttpEntity entity = s3get(uri).orElse(null);
+    byte[] entity = s3get(uri).orElse(null);
 
     if (entity != null) {
-      try (SeekableByteChannel channel = new SeekableInMemoryByteChannel(entity.toByteArray());
+      try (SeekableByteChannel channel = new SeekableInMemoryByteChannel(entity);
           ZipFile zip = new ZipFile(channel)) {
         unzip(zip);
       }
@@ -64,54 +59,61 @@ public class TmpDump {
 
   public static final String S3_SERVICE_NAME = "s3";
 
-  private static final Pattern S3_URI_PATTERN = Pattern.compile("s3://([-a-z0-9]+)(/.*)");
+  private static final Pattern S3_URI_PATTERN = Pattern.compile("^s3://([-a-z0-9]+)/(.*)$");
 
-  public static Optional<ModelHttpEntity> s3get(String uri) throws IOException {
+  public static Optional<byte[]> s3get(String uri) throws IOException {
     Matcher s3UriMatcher = S3_URI_PATTERN.matcher(uri);
     if (!s3UriMatcher.matches())
       throw new IllegalArgumentException("Invalid S3 uri");
     final String bucketName = s3UriMatcher.group(1).toLowerCase();
-    final String path = s3UriMatcher.group(2);
+    final String key = s3UriMatcher.group(2);
 
     final String region = getenv(AWS_REGION_ENV_NAME);
 
     if (DEBUG) {
       System.err.println("Found bucketName " + bucketName);
-      System.err.println("Found path " + path);
+      System.err.println("Found path " + key);
       System.err.println("Found region " + region);
     }
 
-    return s3get(new AwsSigningCredentialsProviderChain(), uri, bucketName, path, region);
+    return s3get(new DefaultAwsCredentialsProviderChain(), bucketName, key, region);
   }
 
-  /* default */ static Optional<ModelHttpEntity> s3get(
-      AwsSigningCredentialsProvider credentialsProvider, String uri, String bucketName, String path,
-      String region) throws IOException {
-    /**
-     * https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html
-     */
-    final String url =
-        format("https://%s.%s.amazonaws.com/%s%s", S3_SERVICE_NAME, region, bucketName, path);
-
-    if (DEBUG) {
-      System.err.println("Computed url " + url);
-    }
-
-    try (ModelHttpClient client = new AwsSigningModelHttpClient(
-        new SigV4AwsSigner(credentialsProvider), new UrlConnectionModelHttpClient())) {
-      ModelHttpResponse response = client.send(ModelHttpRequest.builder().version("1.1")
-          .method("GET").headers(ModelHttpHeaders.of()).url(ModelHttpUrl.fromString(url)).build());
-      if (DEBUG) {
-        System.err.println("Got status code " + response.getStatusCode());
-      }
-      if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+  /* default */ static Optional<byte[]> s3get(AwsCredentialsProvider credentialsProvider,
+      String bucketName, String key, String region) throws IOException {
+    try (S3Client client =
+        S3Client.builder().credentialsProvider(credentialsProvider).region(region).build()) {
+      try (InputStream in =
+          client.getObject(GetObjectRequest.builder().bucket(bucketName).key(key).build())) {
         if (DEBUG) {
-          System.err.println(
-              response.getEntity().map(e -> e.toString(StandardCharsets.UTF_8)).orElse(""));
+          System.err.println("Found object: s3://" + bucketName + "/" + key);
         }
-        throw new IOException(format("S3 Get Failure %s (%d)", url, response.getStatusCode()));
+        return Optional.of(ByteStreams.toByteArray(in));
+      } catch (NoSuchKeyException e) {
+        if (DEBUG) {
+          System.err.println("No such key: " + key);
+          e.printStackTrace(System.err);
+        }
+        return Optional.empty();
+      } catch (NoSuchBucketException e) {
+        if (DEBUG) {
+          System.err.println("No such bucket: " + bucketName);
+          e.printStackTrace(System.err);
+        }
+        return Optional.empty();
+      } catch (AccessDeniedException e) {
+        if (DEBUG) {
+          System.err.println("Access denied to object: s3://" + bucketName + "/" + key);
+          e.printStackTrace(System.err);
+        }
+        return Optional.empty();
+      } catch (RuntimeException e) {
+        throw e;
+      } catch (IOException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new IOException("Failed to download given object: s3://" + bucketName + "/" + key, e);
       }
-      return response.getEntity();
     }
   }
 
