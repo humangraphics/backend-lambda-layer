@@ -1,6 +1,8 @@
 # backend-lambda-layer
 
-This backend layer makes a few important preparations to the lambda runtime during initialization:
+This is Lambda layer that allows HumanGraphics to run AI/ML models in AWS Lambda using SnapStart.
+
+It makes a few important preparations to the lambda runtime during initialization:
 
 1. Use a custom `AWSLambda` implementation to load the application in the system classloader. By default, the application is loaded in a separate classloader. This is important because native libraries are only allowed to be loaded from one classloader in an application, and splitting classloaders causes problems with JNI loading.
 2. Modify the classpath to include the `/var/task` folder, which is where the application is unzipped. This is important because services are only allowed to load from the classpath.
