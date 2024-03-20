@@ -1,6 +1,8 @@
 # backend-lambda-layer
 
-This is Lambda layer that allows HumanGraphics to run AI/ML models in AWS Lambda using SnapStart.
+This is Lambda layer that allows HumanGraphics to run AI/ML models in AWS Lambda using SnapStart, as referenced in [Java AI/ML on Lambda with Human Graphics | Serverless Office Hours](https://www.youtube.com/watch?v=wy2QYgKAoEg&t=5s).
+
+## Overview
 
 It makes a few important preparations to the lambda runtime during initialization:
 
