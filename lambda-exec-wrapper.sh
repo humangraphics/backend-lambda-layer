@@ -24,7 +24,7 @@ env
 
 # Unpack our tmpdump, if we have one
 pushd /tmp
-/var/lang/bin/java -classpath /var/runtime/lib/aws-lambda-java-core-1.2.3.jar:/var/runtime/lib/aws-lambda-java-runtime-interface-client-2.4.1-linux-x86_64.jar:/var/runtime/lib/aws-lambda-java-serialization-1.1.2.jar:/opt/humangraphics io.humangraphics.backend.lambda.TmpDump "s3://$HUMANGRAPHICS_BUCKET/tmpdump/$AWS_LAMBDA_FUNCTION_NAME.zip"
+/var/lang/bin/java -classpath /var/runtime/lib/aws-lambda-java-core-1.2.3.jar:/var/runtime/lib/aws-lambda-java-runtime-interface-client-2.5.0-linux-x86_64.jar:/var/runtime/lib/aws-lambda-java-serialization-1.1.5.jar:/opt/humangraphics io.humangraphics.backend.lambda.TmpDump "s3://$HUMANGRAPHICS_BUCKET/tmpdump/$AWS_LAMBDA_FUNCTION_NAME.zip"
 popd
 
 # Grab our args
