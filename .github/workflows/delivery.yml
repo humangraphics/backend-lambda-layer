@@ -18,18 +18,18 @@ jobs:
       - name: Configure AWS credentials for us-east-2
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ vars.CD_AWS_ACCOUNT_ID }}:role/github-oidc-humangraphics-role
+          role-to-assume: arn:aws:iam::${{ secrets.CD_AWS_ACCOUNT_ID }}:role/github-oidc-humangraphics-role
           aws-region: us-east-2
       - name: Build our layer
         run: make
       - name: Prepare CloudFormation stack
         run: aws cloudformation package --template-file cfn-deploy.yml --s3-bucket "$S3_BUCKET" --s3-prefix artifacts/backend-lambda-layer >cfn-deploy.packaged.yml
         env:
-          S3_BUCKET: ${{ vars.S3_BUCKET }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
       - name: Deploy CloudFormation stack
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         env:
-          AWS_ACCOUNT_ID: ${{ vars.CD_AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID: ${{ secrets.CD_AWS_ACCOUNT_ID }}
         with:
           name: humangraphics-backend-lambda-layer
           template: cfn-deploy.packaged.yml
