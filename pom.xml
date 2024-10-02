@@ -73,14 +73,14 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.24.0</version>
+            <version>1.27.1</version>
         </dependency>
         <!-- These are all provided by the lambda container: -->
         <!-- https://docs.aws.amazon.com/lambda/latest/dg/lambda-java.html -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-runtime-interface-client</artifactId>
-            <version>2.5.0</version>
+            <version>2.5.1</version>
             <scope>provided</scope>
         </dependency>
         <!-- For testing -->
