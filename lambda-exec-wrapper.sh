@@ -43,13 +43,32 @@
 # https://github.com/sigpwned/the-lambda-iceberg-dissecting-the-official-java-runtimes  
 
 # Dump our env
-env 
+echo "ENVIRONMENT:"
+env
+echo
+
+# List our runtime libs
+echo "RUNTIME LIBS:"
+ls -l /var/runtime/lib
+echo
+
+# Get our runtime version
+echo "RUNTIME VERSION:"
+cat /var/runtime/runtime-release
+echo
+
+# Detect key library versions
+pushd /var/runtime/lib
+AWS_LAMBDA_JAVA_CORE_JAR=`ls aws-lambda-java-core-*.jar`
+AWS_LAMBDA_JAVA_RUNTIME_INTERFACE_CLIENT_JAR=`ls aws-lambda-java-runtime-interface-client-*.jar`
+AWS_LAMBDA_JAVA_SERIALIZATION_JAR=`ls aws-lambda-java-serialization-*.jar`
+popd
 
 # Unpack our tmpdump, if we have one
-# Remember, /opt/humangraphics is where this custom layer ("humangraphics")
+# Remember, /opt/humangraphics is where this custom layer ("humangraphics") will
 # be unpacked.
 pushd /tmp
-/var/lang/bin/java -classpath /var/runtime/lib/aws-lambda-java-core-1.2.3.jar:/var/runtime/lib/aws-lambda-java-runtime-interface-client-2.5.1-linux-x86_64.jar:/var/runtime/lib/aws-lambda-java-serialization-1.1.5.jar:/opt/humangraphics io.humangraphics.backend.lambda.TmpDump "s3://$HUMANGRAPHICS_BUCKET/tmpdump/$AWS_LAMBDA_FUNCTION_NAME.zip"
+/var/lang/bin/java -classpath /var/runtime/lib/$AWS_LAMBDA_JAVA_CORE_JAR:/var/runtime/lib/$AWS_LAMBDA_JAVA_RUNTIME_INTERFACE_CLIENT_JAR:/var/runtime/lib/$AWS_LAMBDA_JAVA_SERIALIZATION_JAR.jar:/opt/humangraphics io.humangraphics.backend.lambda.TmpDump "s3://$HUMANGRAPHICS_BUCKET/tmpdump/$AWS_LAMBDA_FUNCTION_NAME.zip"
 popd
 
 # Grab our args
